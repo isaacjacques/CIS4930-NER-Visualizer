@@ -151,7 +151,6 @@
         </td>
       </tr>
     </table>
-    <!-- Sentence Lengths Chart Below -->
     <div id="sentenceLengthsSection">
       <h4>Sentence Lengths</h4>
       <canvas id="sentenceLengthsChart"></canvas>
@@ -223,6 +222,12 @@
   
     const showStats = () => {
       const text = document.getElementById("input-text").value;
+
+      if (text.trim() === "") {
+        alert("Please enter some text to view stats");
+        return;
+      }
+
       fetch("/stats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -251,7 +256,6 @@
         
         // Create or update the bar chart for sentence lengths
         const ctx = document.getElementById("sentenceLengthsChart").getContext("2d");
-        // If a previous chart exists, destroy it before creating a new one
         if (window.sentenceLengthsChart && typeof window.sentenceLengthsChart.destroy === "function") {
           window.sentenceLengthsChart.destroy();
         }
@@ -294,7 +298,6 @@
       .catch(error => console.error("Error fetching statistics:", error));
     };
 
-    // Updated clearInput function to hide the stats container
     function clearInput() {
       document.getElementById("input-text").value = "";
       document.getElementById("file-input").value = "";
