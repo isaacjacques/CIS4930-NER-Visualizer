@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NER Visualizer</title>
+  <style>
+    body {
+      background-color: #007BFF;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 80%;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      margin-top: 10px;
+      border-radius: 10px;
+      color: black;
+    }
+    .text-box {
+      width: 100%;
+      height: 350px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      overflow-y: scroll;
+      white-space: pre-wrap;
+      background: #f9f9f9;
+      resize: none;
+    }
+    #ner-display {
+      width: 100%;
+      height: 350px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      overflow-y: scroll;
+      background: #f9f9f9;
+    }
+    .controls {
+      width: 50%;
+      padding-left: 20px;
+      text-align: left;
+    }
+    .input-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .file-save-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    #file-input {
+      flex: 1;
+    }
+    .btn {
+      padding: 8px 15px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      border-radius: 5px;
+    }
+    #save-btn {
+      background-color: #1fab40;
+    }
+    #stat-btn {
+      background-color: #1f2bab;
+    }
+    #clear-btn {
+      background-color: #ab1f1f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Named Entity Visualizer</h1>
+  <div class="container">
+    <div class="input-container">
+      <textarea id="input-text" class="text-box" placeholder="Your text here..." oninput="updateEntities()"></textarea>
+      <div class="file-save-container">
+        <input type="file" id="file-input" accept=".pdf, .docx" onchange="uploadFile()">
+        <button class="btn" id="clear-btn" onclick="clearInput()">Clear</button>
+        <button class="btn" id="stat-btn" onclick="showStats()">Show Statistics</button>
+        <button class="btn" id="save-btn" onclick="saveResults()">Save Results</button>
+      </div>
+    </div>
+    <div class="controls">
+      <h3>Select Entity Types:</h3>
+      <label>
+        <input type="checkbox" id="select-all" onclick="toggleAll(this)"> <strong>Select All</strong>
+      </label>
+      <br>
+      {% for entity in entity_types %}
+        <label>
+          <input type="checkbox" name="entity" value="{{ entity }}" onclick="updateEntities()"> {{ entity }}
+        </label>
+        <br>
+      {% endfor %}
+    </div>
+  </div>
+  <hr>
+  <div class="container">
+    <div id="ner-display">{{ html|safe }}</div>
+  </div>
+  <div class="container">
+    <div style="width: 100%;">
+      <h3>Statistics</h3>
+      <pre id="statsOutput"></pre>
+    </div>
+  </div>
+  <script>
+    // Toggle all entity checkboxes based on the "Select All" checkbox
+    const toggleAll = (source) => {
+      const checkboxes = document.querySelectorAll("input[name='entity']");
+      checkboxes.forEach(checkbox => checkbox.checked = source.checked);
+      updateEntities();
+    };
+
+    // Update the entity visualization based on selected types and user text
+    const updateEntities = () => {
+      const selectedEntities = Array.from(document.querySelectorAll("input[name='entity']:checked"))
+                                    .map(checkbox => checkbox.value);
+      const userText = document.getElementById("input-text").value;
+
+      fetch("/filter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selected_entities: selectedEntities, text: userText })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("ner-display").innerHTML = data.html;
+      })
+      .catch(error => console.error("Error updating entities:", error));
+    };
+
+    // Upload file and update the text area with extracted text
+    const uploadFile = () => {
+      const fileInput = document.getElementById("file-input");
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", file);
+
+      fetch("/upload", { method: "POST", body: formData })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("input-text").value = data.text;
+        updateEntities();
+      })
+      .catch(error => console.error("Error uploading file:", error));
+    };
+
+    // Save the current results to a DOCX file
+    const saveResults = () => {
+      const userText = document.getElementById("input-text").value;
+      const selectedEntities = Array.from(document.querySelectorAll("input[name='entity']:checked"))
+                                    .map(checkbox => checkbox.value);
+
+      fetch("/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: userText, selected_entities: selectedEntities })
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.success ? `Results saved successfully as ${data.file_path}!` : "Error saving file.");
+      })
+      .catch(error => console.error("Error saving results:", error));
+    };
+
+    // Fetch and display NER statistics
+    const showStats = () => {
+      const text = document.getElementById("input-text").value;
+      fetch("/stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("statsOutput").textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(error => console.error("Error fetching statistics:", error));
+    };
+
+    function clearInput() {
+      document.getElementById("input-text").value = "";
+      document.getElementById("file-input").value = "";
+      document.getElementById("statsOutput").textContent = "";
+      updateEntities();
+    }
+  </script>
+</body>
+</html>

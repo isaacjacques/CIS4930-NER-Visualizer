@@ -1,0 +1,23 @@
+Semester Project - Phase III
+------------------------------
+Add Stats feature (5)
+1. Entity Count and Distribution
+2. Entity Types Distribution
+3. Token Count
+4. Sentence Length and Structure
+5. Entity Density
+6. Frequencey of Entity Co-occurence
+7. Out-of-Vocabulary Words
+8. Named Entity Length Distribution
+9. Entity Ambiguity
+
+
+
+-Entity Count and Distribution
+-Token Count
+-Entity Density
+-Out-of-Vocabulary Words
+-Named Entity Length Distribution
+
+-Frequencey of Entity Co-occurence
+-Entity Ambiguity
