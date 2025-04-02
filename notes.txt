@@ -16,8 +16,5 @@ Add Stats feature (5)
 -Entity Count and Distribution
 -Token Count
 -Entity Density
--Out-of-Vocabulary Words
+-Sentence Length and Structure
 -Named Entity Length Distribution
-
--Frequencey of Entity Co-occurence
--Entity Ambiguity
