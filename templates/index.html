@@ -80,6 +80,8 @@
       background-color: #ab1f1f;
     }
   </style>
+  <!-- Include Chart.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <h1>Named Entity Visualizer</h1>
@@ -113,34 +115,46 @@
   </div>
   <div class="container" id="statsContainer" style="display: none;">
     <h3>Statistics</h3>
-    <div id="summarySection" style="text-align: left;">
-      <p id="totalEntities"><strong>Total Entities:</strong> 0</p>
-      <p id="tokenCount"><strong>Token Count:</strong> 0</p>
-      <p id="entityDensity"><strong>Entity Density:</strong> 0</p>
-      <p id="avgSentenceLength"><strong>Average Sentence Length:</strong> 0</p>
-    </div>
-    <div id="distributionSection">
-      <h4>Entity Distribution</h4>
-      <table id="entityDistributionTable" border="1" cellspacing="0" cellpadding="5">
-        <thead>
-          <tr>
-            <th>Entity Type</th>
-            <th>Count</th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-    </div>
+    <table style="width: 100%;">
+      <tr>
+        <td style="vertical-align: top; width: 33%;">
+          <div id="summarySection" style="text-align: left;">
+            <h4>Summary</h4>
+            <p id="totalEntities"><strong>Total Entities:</strong> 0</p>
+            <p id="tokenCount"><strong>Token Count:</strong> 0</p>
+            <p id="entityDensity"><strong>Entity Density:</strong> 0</p>
+            <p id="avgSentenceLength"><strong>Average Sentence Length:</strong> 0</p>
+          </div>
+        </td>
+        <td style="vertical-align: top; width: 33%;">
+          <div id="distributionSection">
+            <h4>Entity Distribution</h4>
+            <table id="entityDistributionTable" border="1" cellspacing="0" cellpadding="5" style="margin: 0 auto;">
+              <thead>
+                <tr>
+                  <th>Entity Type</th>
+                  <th>Count</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </td>
+        <td style="vertical-align: top; width: 33%;">
+          <div id="entityLengthSection" style="text-align: left;">
+            <h4>Named Entity Length Distribution</h4>
+            <p id="minNe"><strong>Min:</strong> 0</p>
+            <p id="maxNe"><strong>Max:</strong> 0</p>
+            <p id="avgNe"><strong>Average:</strong> 0</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+    <!-- Sentence Lengths Chart Below -->
     <div id="sentenceLengthsSection">
       <h4>Sentence Lengths</h4>
-      <p id="sentenceLengths"></p>
-    </div>
-    <div id="entityLengthSection" style="text-align: left;">
-      <h4>Named Entity Length Distribution</h4>
-      <p id="minNe"><strong>Min:</strong> 0</p>
-      <p id="maxNe"><strong>Max:</strong> 0</p>
-      <p id="avgNe"><strong>Average:</strong> 0</p>
+      <canvas id="sentenceLengthsChart"></canvas>
     </div>
   </div>
   <script>
@@ -235,8 +249,32 @@
           tableBody.appendChild(row);
         }
         
-        // Update sentence lengths
-        document.getElementById("sentenceLengths").textContent = data.sentence_lengths.join(', ');
+        // Create or update the bar chart for sentence lengths
+        const ctx = document.getElementById("sentenceLengthsChart").getContext("2d");
+        // If a previous chart exists, destroy it before creating a new one
+        if (window.sentenceLengthsChart && typeof window.sentenceLengthsChart.destroy === "function") {
+          window.sentenceLengthsChart.destroy();
+        }
+        window.sentenceLengthsChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.sentence_lengths.map((_, index) => (index + 1)),
+            datasets: [{
+              label: 'Sentence Length',
+              data: data.sentence_lengths,
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
         
         // Update named entity length distribution
         if (data.named_entity_length_distribution && data.named_entity_length_distribution.length > 0) {
